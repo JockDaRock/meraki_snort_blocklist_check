@@ -7,37 +7,9 @@ import datetime
 import socket
 from dotenv import load_dotenv
 import os
+import ip_controller
 
 load_dotenv()
-
-def is_ip_or_hostname(host_ip):
-    re_ip = re.compile("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
-    ip = re.findall(re_ip, host_ip)
-    if len(ip) == 0:
-        return "hostname"
-    else:
-        return "ip"
-
-
-def is_private_ip(ip_addy):
-    priv_ip = ipaddress.ip_address(ip_addy).is_private
-    return priv_ip
-
-def get_block_list():
-    block_list_req = requests.get("https://www.snort.org/downloads/ip-block-list")
-    block_list_text = block_list_req.text
-    
-    block_list_array = block_list_text.splitlines()
-
-    return block_list_array
-
-def convert_host_to_ip(hostname):
-    try:
-        ip = socket.gethostbyname(hostname)
-        return ip
-    except:
-        ip = "unknown"
-        return ip
 
 def meraki_network_traffic(net_ID, api_key, time_span, timestamp, workbook):
 
@@ -53,7 +25,7 @@ def meraki_network_traffic(net_ID, api_key, time_span, timestamp, workbook):
     response = requests.request("GET", url, headers=headers, params=querystring)
     #insert logging here
 
-    block_list = get_block_list()
+    block_list = ip_controller.get_block_list()
     
     site_json = response.json()
     count = 2
@@ -74,8 +46,8 @@ def meraki_network_traffic(net_ID, api_key, time_span, timestamp, workbook):
         if meraki_dest == None:
             print("Destination is null, application type {0}.".format(app))
         else:
-            if is_ip_or_hostname(meraki_dest) == "hostname":
-                ip = convert_host_to_ip(meraki_dest)
+            if ip_controller.is_ip_or_hostname(meraki_dest) == "hostname":
+                ip = ip_controller.convert_host_to_ip(meraki_dest)
                 if ip in block_list:
                     active_blocklist = True
 
@@ -113,7 +85,7 @@ def meraki_network_traffic(net_ID, api_key, time_span, timestamp, workbook):
 
                     count = count + 1
 
-            elif is_private_ip(meraki_dest):
+            elif ip_controller.is_private_ip(meraki_dest):
                 print("Meraki destination {0} is a private address and will not be checked.".format(meraki_dest))
             else:
                 if meraki_dest in block_list:
@@ -161,10 +133,8 @@ def meraki_network_traffic(net_ID, api_key, time_span, timestamp, workbook):
 if __name__ == "__main__":
     # Enter your Meraki Org ID and assoicated Meraki API key to use this application
 
-    netID = "L_566327653141850389"
-    apiKey = "35ef10ca8b5e9de04013c5c54b1ba5304c87b95a"
-    #timespan = "2592000"
-    #timespan = "86400"
+    netID = os.environ.get('NETID')
+    apiKey = os.environ.get('APIKEY')
     timespan = "7200"
     #insert logging here
 
