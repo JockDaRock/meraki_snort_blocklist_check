@@ -1,7 +1,5 @@
-import requests
 import time
 from openpyxl import Workbook, load_workbook
-import re
 import datetime
 from dotenv import load_dotenv
 import os
