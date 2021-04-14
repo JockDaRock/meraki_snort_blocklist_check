@@ -48,4 +48,3 @@ if __name__ == "__main__":
     workbook.save(filename="dest_talos_blacklist_check_{0}.xlsx".format(timestamp))
 
     #insert logging here
-
